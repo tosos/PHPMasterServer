@@ -4,6 +4,10 @@
 	echo "Could not select database " . mysql_error ();
 	exit;
     }
+    
+    $query = "DELETE FROM MasterServer WHERE (NOW()-updated) > '30';";
+    mysql_query ($query);
+
     $query = "SELECT externalIp,externalPort,internalIp,internalPort,useNat,guid,gameType,gameName,connectedPlayers,playerLimit,passwordProtected,comment,NOW()-updated FROM MasterServer WHERE gameType='".$_REQUEST["gameType"]."';";
     // echo ($query);
     $res = mysql_query ($query);
@@ -16,7 +20,6 @@
     $show = 0;
     for ($i = 0; $i < $rows; $i ++) {
        $row = mysql_fetch_row ($res);
-       if ($row[$cols - 1] > 30) { continue; }
        if ($show == 1) {
          print ";";
        } else {
