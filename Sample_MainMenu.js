@@ -9,11 +9,11 @@ private var connectionError : NetworkConnectionError;
 private var masterserverError : String = "";
 
 function Awake () {
-    var objs = GameObject.FindObjectsOfType (MainMenu);
+    var objs = GameObject.FindObjectsOfType (Sample_MainMenu);
     if (objs.length > 1) {
         for (var obj in objs) {
             if (obj != this.gameObject) {
-                obj.GetComponent(MainMenu).ResetMenu ();
+                obj.GetComponent(Sample_MainMenu).ResetMenu ();
             }
         }
         Destroy (this.gameObject);
