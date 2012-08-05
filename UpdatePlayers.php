@@ -1,17 +1,18 @@
 <?php
-    $db = mysql_connect ("server_name", "user_name", "password");
-    if (!mysql_select_db ("database_name")) {
+require 'sql.conf.php';
+$db = mysql_connect ($sqlc["server"], $sqlc["user"], $sqlc["pass"]);
+if (!mysql_select_db ($sqlc["db"])) {
 	echo "Could not select database " . mysql_error ();
 	exit;
-    }
-    $query = "UPDATE MasterServer ".
-             "SET connectedPlayers=".$_REQUEST['connectedPlayers']." ".
-             "WHERE gameType='".$_REQUEST['gameType']."' ".
-	     "AND gameName='".$_REQUEST['gameName']."';";
-    $res = mysql_query ($query);
-    if (!$res) {
+}
+$query = "UPDATE MasterServer ".
+"SET connectedPlayers=".$_REQUEST['connectedPlayers']." ".
+"WHERE gameType='".$_REQUEST['gameType']."' ".
+"AND gameName='".$_REQUEST['gameName']."';";
+$res = mysql_query ($query);
+if (!$res) {
 	echo "Could not execute query: " . mysql_error ();
 	exit;
-    }
-    mysql_close ($db);
+}
+mysql_close ($db);
 ?>
