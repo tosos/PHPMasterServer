@@ -5,7 +5,9 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	
 	public string masterServerURL = "";
 	public string gameType = "";
+    [HideInInspector]
 	public string gameName = "";
+    [HideInInspector]
 	public string comment = "";
 	public float delayBetweenUpdates = 10.0f;
 	private HostData[] hostData = null;
@@ -13,8 +15,13 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	private int retries = 0;
 	
 	
-	void Start () {
-		DontDestroyOnLoad (this);
+	void Awake () {
+        Object[] objs = FindObjectsOfType (typeof(PHPMasterServerConnect));
+        if (objs.Length > 1) {
+            Destroy (gameObject);
+        } else {
+		    DontDestroyOnLoad (this);
+        }
 	}
 	
 	public HostData[] PollHostList()
@@ -64,38 +71,41 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	    }
 	}
 	
+    IEnumerator RegisterHost () {
+	    string url = masterServerURL+"RegisterHost.php";
+	    url += "?gameType="+WWW.EscapeURL (gameType);
+	    url += "&gameName="+WWW.EscapeURL (gameName);
+	    url += "&comment="+WWW.EscapeURL (comment);
+	    url += "&useNat="+!Network.HavePublicAddress();
+	    url += "&connectedPlayers="+(Network.connections.Length + 1);
+	    url += "&playerLimit="+Network.maxConnections;
+	    url += "&internalIp="+Network.player.ipAddress;
+	    url += "&internalPort="+Network.player.port;
+	    url += "&externalIp="+Network.player.externalIP;
+	    url += "&externalPort="+Network.player.externalPort;
+	    url += "&guid="+Network.player.guid;
+	    url += "&passwordProtected="+(Network.incomingPassword != "" ? 1 : 0);
+	    Debug.Log (url);
+	
+	    WWW www = new WWW (url);
+	    yield return www;
+	
+	    retries = 0;
+	    while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
+	        retries ++;
+	        www = new WWW (url);
+	        yield return www;
+	    }
+	    if ((www.error != null || www.text != "succeeded")) {
+	        SendMessage ("OnRegisterHostFailed");
+		}
+    }
+
 	IEnumerator RegistrationLoop()
 	{
 		while (Network.isServer) {
+            yield return StartCoroutine (RegisterHost());
     		yield return new WaitForSeconds(delayBetweenUpdates);
-
-		    string url = masterServerURL+"RegisterHost.php";
-		    url += "?gameType="+WWW.EscapeURL (gameType);
-		    url += "&gameName="+WWW.EscapeURL (gameName);
-		    url += "&comment="+WWW.EscapeURL (comment);
-		    url += "&useNat="+!Network.HavePublicAddress();
-		    url += "&connectedPlayers="+(Network.connections.Length + 1);
-		    url += "&playerLimit="+Network.maxConnections;
-		    url += "&internalIp="+Network.player.ipAddress;
-		    url += "&internalPort="+Network.player.port;
-		    url += "&externalIp="+Network.player.externalIP;
-		    url += "&externalPort="+Network.player.externalPort;
-		    url += "&guid="+Network.player.guid;
-		    url += "&passwordProtected="+(Network.incomingPassword != "" ? 1 : 0);
-		    Debug.Log (url);
-		
-		    WWW www = new WWW (url);
-		    yield return www;
-		
-		    retries = 0;
-		    while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
-		        retries ++;
-		        www = new WWW (url);
-		        yield return www;
-		    }
-		    if ((www.error != null || www.text != "succeeded")) {
-		        SendMessage ("OnUpdateHostFailed");
-			}
 		}
 	}
 	
@@ -104,33 +114,6 @@ public class PHPMasterServerConnect : MonoBehaviour {
 		while (Network.player.externalPort == 65535) {
     		yield return new WaitForSeconds(1);
   		}
-  		string url = masterServerURL+"RegisterHost.php";
-  		url += "?gameType="+WWW.EscapeURL (gameType);
-  		url += "&gameName="+WWW.EscapeURL (gameName);
-  		url += "&comment="+WWW.EscapeURL (comment);
-  		url += "&useNat="+!Network.HavePublicAddress();
-  		url += "&connectedPlayers="+(Network.connections.Length + 1);
-  		url += "&playerLimit="+Network.maxConnections;
-  		url += "&internalIp="+Network.player.ipAddress;
-  		url += "&internalPort="+Network.player.port;
-  		url += "&externalIp="+Network.player.externalIP;
-  		url += "&externalPort="+Network.player.externalPort;
-  		url += "&guid="+Network.player.guid;
-  		url += "&passwordProtected="+(Network.incomingPassword != "" ? 1 : 0);
-  		Debug.Log (url);
-  		WWW www = new WWW (url);
-  		yield return www;
-
-  		retries = 0;
-  		while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
-      		retries ++;
-      		www = new WWW (url);
-      		yield return www;
-  		}
-  		if ((www.error != null || www.text != "succeeded")) {
-      		SendMessage ("OnRegisterHostFailed");
-  		}
-
   		StartCoroutine (RegistrationLoop());
 	}
 	
@@ -196,6 +179,15 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	        }
     	}
 	}
+
+    void OnDestroy () {
+        if (Network.isServer) {
+	        string url = masterServerURL+"UnregisterHost.php";
+	        url += "?gameType="+WWW.EscapeURL (gameType);
+	        url += "&gameName="+WWW.EscapeURL (gameName);
+	        new WWW (url);
+        }
+    }
 	
 	public void SetComment(string text)
 	{
