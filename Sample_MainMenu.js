@@ -20,7 +20,7 @@ function Awake () {
         return;
     }
     DontDestroyOnLoad (this);
-    networkView.group = 1;
+    GetComponent.<NetworkView>().group = 1;
 }
 
 function OnGUI () {
@@ -90,7 +90,7 @@ function DisplayHostMenu () {
         Network.InitializeServer (32, parseInt(portString),
             !Network.HavePublicAddress ());
         MasterServer.RegisterHost (conn.gameType, conn.gameName, "");
-        networkView.RPC ("LoadLevel", RPCMode.AllBuffered, 
+        GetComponent.<NetworkView>().RPC ("LoadLevel", RPCMode.AllBuffered, 
                 networkPlayerLevel, lastLevelPrefix + 1);
     }
 }
