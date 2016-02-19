@@ -14,6 +14,16 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	public int maxRetries = 3;
 	private int retries = 0;
 	
+	static private PHPMasterServerConnect _instance = null;
+	static public PHPMasterServerConnect instance {
+		get {
+			if (_instance == null) {
+				Debug.LogError ("No PHPMasterServerConnect in the scene");
+			}
+			return _instance;
+		}
+	}
+ 
 	
 	void Awake () {
         Object[] objs = FindObjectsOfType (typeof(PHPMasterServerConnect));
@@ -22,14 +32,24 @@ public class PHPMasterServerConnect : MonoBehaviour {
         } else {
 		    DontDestroyOnLoad (this);
         }
+
+        if (_instance != null) {
+            Debug.LogError ("Instance should be null");
+        }
+        _instance = this;
 	}
 	
 	public HostData[] PollHostList()
 	{
 		return hostData;
 	}
+
+	public void QueryPHPMasterServer (string type)
+	{
+		StartCoroutine (QueryPHPMasterServerCR (type));
+	}
 	
-	public IEnumerator QueryPHPMasterServer(string type)
+	private IEnumerator QueryPHPMasterServerCR (string type)
 	{
 		string url = masterServerURL+"QueryMS.php?gameType="+WWW.EscapeURL(type);
     	Debug.Log ("looking for URL " + url);
