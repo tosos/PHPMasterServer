@@ -58,14 +58,17 @@ public class PHPMasterServerConnect : MonoBehaviour
 		return hostData;
 	}
 
-	public void QueryPHPMasterServer (string type)
+	private bool atOnce = false;
+	public void QueryPHPMasterServer ()
 	{
-		StartCoroutine (QueryPHPMasterServerCR (type));
+		if (!atOnce) 
+			StartCoroutine (QueryPHPMasterServerCR ());
 	}
 	
-	private IEnumerator QueryPHPMasterServerCR (string type)
+	private IEnumerator QueryPHPMasterServerCR ()
 	{
-		string url = masterServerURL+"QueryMS.php?gameType="+WWW.EscapeURL(type);
+		atOnce = true;
+		string url = masterServerURL+"QueryMS.php?gameType="+WWW.EscapeURL(gameType);
     	Debug.Log ("looking for URL " + url);
     	WWW www = new WWW (url);
     	yield return www;
@@ -82,27 +85,30 @@ public class PHPMasterServerConnect : MonoBehaviour
 	
 	    if (www.text == "") {
 	    	hostData = null;
-	    }
-	    string[] hosts = new string[www.text.Split (";"[0]).Length];
-		hosts = www.text.Split (";"[0]);
-	    hostData = new HostData[hosts.Length];
-	    var index = 0;
-	    foreach (string host in hosts) {
-	        string[] data = host.Split (","[0]);
-	        hostData[index] = new HostData ();
-	        hostData[index].ip = new string[1];
-	        hostData[index].ip[0] = data[0];
-	        hostData[index].port = int.Parse(data[1]);
-	        hostData[index].useNat = (data[2] == "1");
-	        hostData[index].guid = data[3];
-	        hostData[index].gameType = data[4];
-	        hostData[index].gameName = data[5];
-	        hostData[index].connectedPlayers = int.Parse(data[6]);
-	        hostData[index].playerLimit = int.Parse(data[7]);
-	        hostData[index].passwordProtected = (data[8] == "1");
-	        hostData[index].comment = data[9];
-	        index ++;
-	    }
+	    } else {
+	    	string[] hosts = new string[www.text.Split (";"[0]).Length];
+			hosts = www.text.Split (";"[0]);
+	    	hostData = new HostData[hosts.Length];
+	    	var index = 0;
+	    	foreach (string host in hosts) {
+				if (host == "") continue;
+	        	string[] data = host.Split (","[0]);
+	        	hostData[index] = new HostData ();
+	        	hostData[index].ip = new string[1];
+	        	hostData[index].ip[0] = data[0];
+	        	hostData[index].port = int.Parse(data[1]);
+	        	hostData[index].useNat = (data[2] == "1");
+	        	hostData[index].guid = data[3];
+	        	hostData[index].gameType = data[4];
+	        	hostData[index].gameName = data[5];
+	        	hostData[index].connectedPlayers = int.Parse(data[6]);
+	        	hostData[index].playerLimit = int.Parse(data[7]);
+	        	hostData[index].passwordProtected = (data[8] == "1");
+	        	hostData[index].comment = data[9];
+	        	index ++;
+	    	}
+		}
+		atOnce = false;
 	}
 
 	public void RegisterHost (string pGameName, string pComment) {
