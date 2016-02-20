@@ -14,7 +14,7 @@ $query = "INSERT INTO MasterServer ".
          "('".$_REQUEST['gameType']."','".$_REQUEST['gameName'].
          "',".$_REQUEST['connectedPlayers'].",".$_REQUEST['playerLimit'].
          ",'".$_REQUEST['internalIp']."',".$_REQUEST['internalPort'].
-         ",'".$_REQUEST['externalIp']."',".$_REQUEST['externalPort'].
+         ",'".$_SERVER['REMOTE_ADDR']."',".$_REQUEST['externalPort'].
          ",'".$_REQUEST['comment']."',NOW());";
 $res = mysql_query ($query);
 if (!$res) {
