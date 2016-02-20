@@ -1,18 +1,23 @@
 using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections;
 
-public class PHPMasterServerConnect : MonoBehaviour {
-	
+public class PHPMasterServerConnect : MonoBehaviour 
+{
 	public string masterServerURL = "";
 	public string gameType = "";
     [HideInInspector]
 	public string gameName = "";
     [HideInInspector]
 	public string comment = "";
+
 	public float delayBetweenUpdates = 10.0f;
 	private HostData[] hostData = null;
+
 	public int maxRetries = 3;
 	private int retries = 0;
+
+	private bool registered = false;
 	
 	static private PHPMasterServerConnect _instance = null;
 	static public PHPMasterServerConnect instance {
@@ -23,7 +28,6 @@ public class PHPMasterServerConnect : MonoBehaviour {
 			return _instance;
 		}
 	}
- 
 	
 	void Awake () {
         Object[] objs = FindObjectsOfType (typeof(PHPMasterServerConnect));
@@ -38,6 +42,16 @@ public class PHPMasterServerConnect : MonoBehaviour {
         }
         _instance = this;
 	}
+
+    void OnDestroy () {
+        if (registered) {
+			// Unregister without the CR
+	        string url = masterServerURL+"UnregisterHost.php";
+	        url += "?gameType="+WWW.EscapeURL (gameType);
+	        url += "&gameName="+WWW.EscapeURL (gameName);
+	        new WWW (url);
+        }
+    }
 	
 	public HostData[] PollHostList()
 	{
@@ -90,53 +104,85 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	        index ++;
 	    }
 	}
-	
-    IEnumerator RegisterHost () {
+
+	public void RegisterHost (string pGameName, string pComment) {
+		gameName = pGameName;
+		comment = pComment;
+		registered = true;
+		StartCoroutine (RegistrationLoop ());
+	}
+
+	private IEnumerator RegistrationLoop()
+	{
+		while (registered && NetworkServer.active) {
+            yield return StartCoroutine (RegisterHostCR());
+    		yield return new WaitForSeconds(delayBetweenUpdates);
+		}
+
+		registered = false;
+	}
+
+    private IEnumerator RegisterHostCR () {
 	    string url = masterServerURL+"RegisterHost.php";
 	    url += "?gameType="+WWW.EscapeURL (gameType);
 	    url += "&gameName="+WWW.EscapeURL (gameName);
 	    url += "&comment="+WWW.EscapeURL (comment);
-	    url += "&useNat="+!Network.HavePublicAddress();
-	    url += "&connectedPlayers="+(Network.connections.Length + 1);
-	    url += "&playerLimit="+Network.maxConnections;
-	    url += "&internalIp="+Network.player.ipAddress;
-	    url += "&internalPort="+Network.player.port;
-	    url += "&externalIp="+Network.player.externalIP;
-	    url += "&externalPort="+Network.player.externalPort;
-	    url += "&guid="+Network.player.guid;
-	    url += "&passwordProtected="+(Network.incomingPassword != "" ? 1 : 0);
+		url += "&playerLimit="+NetworkManager.singleton.matchSize;
+		url += "&connectedPlayers="+NetworkManager.singleton.numPlayers;
+		url += "&internalIp="+NetworkManager.singleton.networkAddress;
+		url += "&internalPort="+NetworkManager.singleton.networkPort;
+		url += "&externalPort="+NetworkManager.singleton.networkPort;
+		if (NetworkManager.singleton.serverBindToIP) {
+	    	url += "&externalIp="+NetworkManager.singleton.serverBindAddress;
+		} else {
+	    	url += "&externalIp="+NetworkManager.singleton.networkAddress;
+		}
 	    Debug.Log (url);
 	
 	    WWW www = new WWW (url);
 	    yield return www;
 	
 	    retries = 0;
-	    while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
+	    while ((www.error != null || www.text != "") && retries < maxRetries) {
 	        retries ++;
 	        www = new WWW (url);
 	        yield return www;
 	    }
-	    if ((www.error != null || www.text != "succeeded")) {
+	    if ((www.error != null || www.text != "")) {
 	        SendMessage ("OnRegisterHostFailed");
 		}
     }
 
-	IEnumerator RegistrationLoop()
+	public void UnregisterHost ()
 	{
-		while (Network.isServer) {
-            yield return StartCoroutine (RegisterHost());
-    		yield return new WaitForSeconds(delayBetweenUpdates);
-		}
+		StartCoroutine (UnregisterHostCR ());
 	}
 	
-	IEnumerator OnServerInitialized()
+	private IEnumerator UnregisterHostCR ()
 	{
-		while (Network.player.externalPort == 65535) {
-    		yield return new WaitForSeconds(1);
-  		}
-  		StartCoroutine (RegistrationLoop());
+		if (registered) {
+	        string url = masterServerURL+"UnregisterHost.php";
+	        url += "?gameType="+WWW.EscapeURL (gameType);
+	        url += "&gameName="+WWW.EscapeURL (gameName);
+			Debug.Log (url);
+	        WWW www = new WWW (url);
+	        yield return www;
+	
+	        retries = 0;
+	        while ((www.error != null || www.text != "") && retries < maxRetries) {
+	            retries ++;
+	            www = new WWW (url);
+	            yield return www;
+	        }
+	        if ((www.error != null || www.text != "")) {
+	            SendMessage ("OnUnregisterHostFailed");
+	        }
+
+			registered = false;
+    	}
 	}
 	
+	// TODO update for the new networking
 	IEnumerator OnPlayerConnected(NetworkPlayer player)
 	{
 		string url = masterServerURL+"UpdatePlayers.php";
@@ -158,6 +204,7 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	    }
 	}
 	
+	// TODO update for the new networking
 	IEnumerator OnPlayerDisconnected(NetworkPlayer player)
 	{
 		string url = masterServerURL+"UpdatePlayers.php";
@@ -177,40 +224,5 @@ public class PHPMasterServerConnect : MonoBehaviour {
 	    if ((www.error != null || www.text != "succeeded")) {
 	        SendMessage ("OnUpdatePlayersFailed");
 	    }
-	}
-	
-	IEnumerator OnDisconnectedFromServer(NetworkDisconnection info)
-	{
-		if (Network.isServer) {
-	        string url = masterServerURL+"UnregisterHost.php";
-	        url += "?gameType="+WWW.EscapeURL (gameType);
-	        url += "&gameName="+WWW.EscapeURL (gameName);
-	        WWW www = new WWW (url);
-	        yield return www;
-	
-	        retries = 0;
-	        while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
-	            retries ++;
-	            www = new WWW (url);
-	            yield return www;
-	        }
-	        if ((www.error != null || www.text != "succeeded")) {
-	            SendMessage ("OnUnregisterHostFailed");
-	        }
-    	}
-	}
-
-    void OnDestroy () {
-        if (Network.isServer) {
-	        string url = masterServerURL+"UnregisterHost.php";
-	        url += "?gameType="+WWW.EscapeURL (gameType);
-	        url += "&gameName="+WWW.EscapeURL (gameName);
-	        new WWW (url);
-        }
-    }
-	
-	public void SetComment(string text)
-	{
-		comment = text; 
 	}
 }
