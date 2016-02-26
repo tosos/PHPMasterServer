@@ -23,23 +23,19 @@ public class PHPMasterServerConnect : MonoBehaviour
 	static public PHPMasterServerConnect instance {
 		get {
 			if (_instance == null) {
-				Debug.LogError ("No PHPMasterServerConnect in the scene");
+				_instance = (PHPMasterServerConnect) FindObjectOfType (typeof(PHPMasterServerConnect));
 			}
 			return _instance;
 		}
 	}
 	
 	void Awake () {
-        Object[] objs = FindObjectsOfType (typeof(PHPMasterServerConnect));
-        if (objs.Length > 1) {
-            Destroy (gameObject);
-        } else {
-		    DontDestroyOnLoad (this);
-        }
-
         if (_instance != null) {
             Debug.LogError ("Instance should be null");
-        }
+            DestroyImmediate (gameObject);
+        } else {
+		    DontDestroyOnLoad (gameObject);
+		}
         _instance = this;
 	}
 
@@ -69,7 +65,7 @@ public class PHPMasterServerConnect : MonoBehaviour
 	{
 		atOnce = true;
 		string url = masterServerURL+"QueryMS.php?gameType="+WWW.EscapeURL(gameType);
-    	Debug.Log ("looking for URL " + url);
+    	// Debug.Log ("looking for URL " + url);
     	WWW www = new WWW (url);
     	yield return www;
 
@@ -83,7 +79,10 @@ public class PHPMasterServerConnect : MonoBehaviour
 	        SendMessage ("OnQueryMasterServerFailed");
 	    }
 	
-	    if (www.text == "") {
+		if (www.text == "") {
+			yield break;
+		} else if (www.text == "empty") {
+			Debug.LogError ("Got an empty result I didn't expect here!");
 	    	hostData = null;
 	    } else {
 	    	string[] hosts = new string[www.text.Split (";"[0]).Length];
