@@ -6,10 +6,8 @@ if (!mysql_select_db ($sqlc["db"])) {
 	exit;
 }
 
-# $query = "DELETE FROM MasterServer WHERE (NOW()-updated) > '30';";
-# mysql_query ($query);
+$query = "SELECT externalIp,externalPort,internalIp,internalPort,useNat,guid,gameType,gameName,connectedPlayers,playerLimit,passwordProtected,comment,updated FROM MasterServer WHERE (UNIX_TIMESTAMP()-updated) < 20 AND gameType='".$_REQUEST["gameType"]."';";
 
-$query = "SELECT externalIp,externalPort,internalIp,internalPort,useNat,guid,gameType,gameName,connectedPlayers,playerLimit,passwordProtected,comment,NOW()-updated AS 'age' FROM MasterServer WHERE 'age' < 30 AND gameType='".$_REQUEST["gameType"]."';";
 // echo ($query);
 $res = mysql_query ($query);
 if (!$res) {

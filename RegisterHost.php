@@ -17,7 +17,7 @@ if (!$res) {
 }
 $rows = mysql_num_rows ($res);
 if ($rows > 0) {
-    $query = "UPDATE MasterServer SET updated=NOW() WHERE ".
+    $query = "UPDATE MasterServer SET updated=UNIX_TIMESTAMP() WHERE ".
              "gameType='".$_REQUEST['gameType']."' AND ".
              "gameName='".$_REQUEST['gameName']."' AND ".
              "externalIp='".$_SERVER['REMOTE_ADDR']."' AND ".
@@ -31,7 +31,7 @@ if ($rows > 0) {
              "',".$_REQUEST['connectedPlayers'].",".$_REQUEST['playerLimit'].
              ",'".$_REQUEST['internalIp']."',".$_REQUEST['internalPort'].
              ",'".$_SERVER['REMOTE_ADDR']."',".$_REQUEST['externalPort'].
-             ",'".$_REQUEST['comment']."',NOW());";
+             ",'".$_REQUEST['comment']."',UNIX_TIMESTAMP());";
 }
 $res = mysql_query ($query);
 if (!$res) {

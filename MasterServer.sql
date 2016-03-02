@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `MasterServer` (
   `passwordProtected` tinyint(1) NOT NULL,
   `comment` blob NOT NULL,
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `updated` datetime DEFAULT NULL,
+  `updated` int(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `gameName_3` (`gameName`),
   FULLTEXT KEY `gameName_2` (`gameName`)
