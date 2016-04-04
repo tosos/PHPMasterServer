@@ -82,7 +82,6 @@ public class PHPMasterServerConnect : MonoBehaviour
 		if (www.text == "") {
 			yield break;
 		} else if (www.text == "empty") {
-			Debug.LogError ("Got an empty result I didn't expect here!");
 	    	hostData = null;
 	    } else {
 	    	string[] hosts = new string[www.text.Split (";"[0]).Length];
@@ -174,12 +173,14 @@ public class PHPMasterServerConnect : MonoBehaviour
 	        yield return www;
 	
 	        retries = 0;
-	        while ((www.error != null || www.text != "") && retries < maxRetries) {
+	        while ((www.error != null || www.text != "succeeded") && retries < maxRetries) {
+				Debug.Log ("Had an error " + www.error + " or text was not succeeded " + www.text);
 	            retries ++;
 	            www = new WWW (url);
 	            yield return www;
 	        }
-	        if ((www.error != null || www.text != "")) {
+	        if ((www.error != null || www.text != "succeeded")) {
+				Debug.Log ("Had an error " + www.error + " or text was not succeeded " + www.text);
 	            SendMessage ("OnUnregisterHostFailed");
 	        }
 
