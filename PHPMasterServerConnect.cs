@@ -31,12 +31,11 @@ public class PHPMasterServerConnect : MonoBehaviour
 	
 	void Awake () {
         if (_instance != null) {
-            Debug.LogError ("Instance should be null");
             DestroyImmediate (gameObject);
         } else {
 		    DontDestroyOnLoad (gameObject);
+        	_instance = this;
 		}
-        _instance = this;
 	}
 
     void OnDestroy () {
