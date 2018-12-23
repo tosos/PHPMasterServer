@@ -12,6 +12,20 @@ public class PHPMasterServerConnect : MonoBehaviour
 	public string comment = "";
 
 	public float delayBetweenUpdates = 10.0f;
+
+	public class HostData {
+		public string[] ip;
+		public int port;
+		public bool useNat;
+		public string guid;
+		public string gameType;
+		public string gameName;
+		public int connectedPlayers;
+		public int playerLimit;
+		public bool passwordProtected;
+		public string comment;
+	};
+
 	private HostData[] hostData = null;
 
 	public int maxRetries = 3;
@@ -187,7 +201,8 @@ public class PHPMasterServerConnect : MonoBehaviour
     	}
 	}
 	
-	// TODO update for the new networking
+	
+/* FIXME update for the new networking
 	IEnumerator OnPlayerConnected(NetworkPlayer player)
 	{
 		string url = masterServerURL+"UpdatePlayers.php";
@@ -208,8 +223,10 @@ public class PHPMasterServerConnect : MonoBehaviour
 	        SendMessage ("OnUpdatePlayersFailed");
 	    }
 	}
+*/
 	
-	// TODO update for the new networking
+	
+/* FIXME update for the new networking
 	IEnumerator OnPlayerDisconnected(NetworkPlayer player)
 	{
 		string url = masterServerURL+"UpdatePlayers.php";
@@ -230,4 +247,5 @@ public class PHPMasterServerConnect : MonoBehaviour
 	        SendMessage ("OnUpdatePlayersFailed");
 	    }
 	}
+*/
 }
